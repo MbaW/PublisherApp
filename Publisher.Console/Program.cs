@@ -2,66 +2,55 @@
 using Publisher.Data;
 using Publisher.Domain;
 
-using (PubContext context = new PubContext())
+PubContext _context = new PubContext();
+
+SortAuthors();
+
+//AddAuthors();
+//SkipAndTakeAuthors();
+
+
+void QueryFilters()
 {
-    context.Database.EnsureCreated();
+    var kword = "M%";
+    var authors = _context.Authors
+        .Where(a => EF.Functions.Like(a.LastName, kword));
+    Console.WriteLine(authors);
+}
+void AddAuthors()
+{
+    _context.Authors.Add(new Author { FirstName = "Rhoda", LastName = "Lerman" });
+    _context.Authors.Add(new Author { FirstName = "Don", LastName = "Jones" });
+    _context.Authors.Add(new Author { FirstName = "Jim", LastName = "Christopher" });
+    _context.Authors.Add(new Author { FirstName = "Stephen", LastName = "Haunts" });
+    _context.SaveChanges();
 }
 
-//GetAuthors();
-//AddAuthors();
-//GetAuthors();
-//AddAuthorWithBook();
-GetAuthorWithBooks();
-
-void GetAuthorWithBooks()
+void SkipAndTakeAuthors()
 {
-    using var context = new PubContext();
-    var authors = context.Authors.Include(a => a.Books).ToList();
-    foreach (var author in authors)
+    var groupeSize = 2;
+    for (int i = 0; i < 5; i++)
     {
-        Console.WriteLine($"{author.FirstName} {author.LastName}");
-        foreach (var book in author.Books)
+        var authors = _context.Authors.Skip(groupeSize * i).Take(groupeSize).ToList();
+        Console.WriteLine($"Group {i}:");
+        foreach (var author in authors)
         {
-            Console.WriteLine($"\t* {book.Title}");
+            Console.WriteLine($"{author.FirstName} {author.LastName}");
         }
     }
 }
 
-void AddAuthorWithBook()
+
+void SortAuthors()
 {
-    var author = new Author { FirstName = "William", LastName = "Mba" };
+    var authorByLastName = _context.Authors
+        .OrderBy(a => a.LastName)
+        .ThenBy(a => a.FirstName).ToList();
+    authorByLastName.ForEach(a => Console.WriteLine($"{a.LastName}, {a.FirstName}"));
 
-    author.Books.Add(new Book
-    {
-        Title = "Programming EF Core",
-        PublishDate = new DateTime(2010, 2, 2)
-    });
-    author.Books.Add(new Book
-    {
-        Title = "Programming EF Core 2nd Ed.",
-        PublishDate = new DateTime(2018, 10, 2)
-    });
-    using var context = new PubContext();
-    context.Authors.Add(author);
-    context.SaveChanges();
-}
-
-
-
-void AddAuthors()
-{
-    var author = new Author { FirstName = "Josie", LastName = "Newf" };
-    using var context = new PubContext();
-    context.Authors.Add(author);
-    context.SaveChanges();
-}
-
-void GetAuthors()
-{
-    using var context = new PubContext();
-    var authors = context.Authors.ToList();
-    foreach (var author in authors)
-    {
-        Console.WriteLine($"{author.FirstName} {author.LastName}");
-    }
+    var authorDescending = _context.Authors
+        .OrderByDescending(a => a.LastName)
+        .ThenByDescending(a => a.FirstName).ToList();
+    Console.WriteLine("**Descending Last and First**");
+    authorDescending.ForEach(a => Console.WriteLine($"{a.LastName}, {a.FirstName}"));
 }
