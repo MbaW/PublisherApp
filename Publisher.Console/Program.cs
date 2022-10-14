@@ -1,61 +1,118 @@
-﻿using Microsoft.EntityFrameworkCore;
-using Publisher.Data;
+﻿using Publisher.Data;
 using Publisher.Domain;
 
 PubContext _context = new PubContext();
 
-//SortAuthors();
-//AddAuthors();
-//SkipAndTakeAuthors();
-QueryAggregate();
 
-void QueryAggregate()
+//RetrieveAndUpdateAuthor();
+//RetrieveAndUpdateMultipleAuthor();
+//VariousOperations();
+//CoordinateRetrieveAndUpdateAuthor();
+DeleteAnAuthor(3);
+//InsertMultipleAuthors();
+//BulkAddUpdate();
+void BulkAddUpdate()
 {
-    var author = _context.Authors.OrderByDescending(a => a.FirstName)
-        .FirstOrDefault(a => a.LastName == "Lerman");
-}
-
-void QueryFilters()
-{
-    var kword = "M%";
-    var authors = _context.Authors
-        .Where(a => EF.Functions.Like(a.LastName, kword));
-    Console.WriteLine(authors);
-}
-void AddAuthors()
-{
-    _context.Authors.Add(new Author { FirstName = "Rhoda", LastName = "Lerman" });
-    _context.Authors.Add(new Author { FirstName = "Don", LastName = "Jones" });
-    _context.Authors.Add(new Author { FirstName = "Jim", LastName = "Christopher" });
-    _context.Authors.Add(new Author { FirstName = "Stephen", LastName = "Haunts" });
+    var newAuthors = new Author[]
+    {
+        new Author { FirstName = "Ruth", LastName = "Ozeki" },
+        new Author { FirstName = "Sofia", LastName = "Segovia" },
+        new Author { FirstName = "Ursula K.", LastName = "Leguin" },
+        new Author { FirstName = "Hugh", LastName = "Howey" },
+        new Author { FirstName = "Isabelle", LastName = "Allende" }
+    };
+    _context.Authors.AddRange(newAuthors);
+    var book = _context.Books.Find(2);
+    book.Title = "Programming EF Core 2nd Edition";
     _context.SaveChanges();
 }
 
-void SkipAndTakeAuthors()
+void InsertMultipleAuthors()
 {
-    var groupeSize = 2;
-    for (int i = 0; i < 5; i++)
+    var authors = new Author[]
     {
-        var authors = _context.Authors.Skip(groupeSize * i).Take(groupeSize).ToList();
-        Console.WriteLine($"Group {i}:");
-        foreach (var author in authors)
+        new Author { FirstName = "Ruth", LastName = "Ozeki" },
+        new Author { FirstName = "Sofia", LastName = "Segovia" },
+        new Author { FirstName = "Ursula K.", LastName = "Leguin" },
+        new Author { FirstName = "Hugh", LastName = "Howey" },
+        new Author { FirstName = "Isabelle", LastName = "Allende" }
+    };
+    InsertMultipleAuthorsPassedIn(authors);
+}
+
+void InsertMultipleAuthorsPassedIn(IEnumerable<Author> authors)
+{
+    _context.Authors.AddRange(authors);
+    _context.SaveChanges();
+}
+void DeleteAnAuthor(int id)
+{
+    var extraWM = _context.Authors.Find(id);
+    if (extraWM != null)
+    {
+        var books = _context.Books.Where(b => b.AuthorId == id).ToList();
+        if (books.Count > 0)
         {
-            Console.WriteLine($"{author.FirstName} {author.LastName}");
+            _context.Books.RemoveRange(books);
         }
+        _context.Authors.Remove(extraWM);
+
+        _context.SaveChanges();
     }
 }
 
-
-void SortAuthors()
+void CoordinateRetrieveAndUpdateAuthor()
 {
-    var authorByLastName = _context.Authors
-        .OrderBy(a => a.LastName)
-        .ThenBy(a => a.FirstName).ToList();
-    authorByLastName.ForEach(a => Console.WriteLine($"{a.LastName}, {a.FirstName}"));
+    var author = FindThatAuthor(1);
+    if (author.FirstName == "Julie")
+    {
+        author.FirstName = "Julia";
+        SaveThatAuthor(author);
+    }
+}
 
-    var authorDescending = _context.Authors
-        .OrderByDescending(a => a.LastName)
-        .ThenByDescending(a => a.FirstName).ToList();
-    Console.WriteLine("**Descending Last and First**");
-    authorDescending.ForEach(a => Console.WriteLine($"{a.LastName}, {a.FirstName}"));
+Author FindThatAuthor(int v)
+{
+    using var shortLiveContext = new PubContext();
+    return shortLiveContext.Authors.Find(v);
+}
+
+void SaveThatAuthor(Author author)
+{
+    using var anotherShortLiveContext = new PubContext();
+    anotherShortLiveContext.Authors.Update(author);
+    anotherShortLiveContext.SaveChanges();
+}
+
+
+void VariousOperations()
+{
+    var author = _context.Authors.Find(2);
+    author.LastName = "NewFoundLand";
+    var newAuthor = new Author { LastName = "Appleman", FirstName = "Dan" };
+    _context.Authors.Add(newAuthor);
+    _context.SaveChanges();
+}
+
+void RetrieveAndUpdateAuthor()
+{
+    var lermanAuthors = _context.Authors.Where(a => a.LastName == "Lerman").ToList();
+    foreach (var la in lermanAuthors)
+    {
+        la.LastName = "Lehrman";
+    }
+    _context.SaveChanges();
+}
+void RetrieveAndUpdateMultipleAuthor()
+{
+    var lermanAuthors = _context.Authors.Where(a => a.LastName == "Lehrman").ToList();
+    foreach (var la in lermanAuthors)
+    {
+        la.LastName = "Lerman";
+    }
+
+    Console.WriteLine($"Before {_context.ChangeTracker.DebugView.ShortView}");
+    _context.ChangeTracker.DetectChanges();
+    Console.WriteLine($"After: {_context.ChangeTracker.DebugView.ShortView}");
+    _context.SaveChanges();
 }
