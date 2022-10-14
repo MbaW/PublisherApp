@@ -4,11 +4,16 @@ using Publisher.Domain;
 
 PubContext _context = new PubContext();
 
-SortAuthors();
-
+//SortAuthors();
 //AddAuthors();
 //SkipAndTakeAuthors();
+QueryAggregate();
 
+void QueryAggregate()
+{
+    var author = _context.Authors.OrderByDescending(a => a.FirstName)
+        .FirstOrDefault(a => a.LastName == "Lerman");
+}
 
 void QueryFilters()
 {
